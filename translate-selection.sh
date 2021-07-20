@@ -126,7 +126,11 @@ TRANS_URL="https://translate.google.com/?sl=$SRC_LANGu&tl=$TRANS_LANG&text=$URLE
 TRANSLATION=$(echo "$TEXT" | $TRANS_TRANSLATE)
 
 if test -z "$TRANSLATION"; then
-  zenity --error --text "Returned empty result from translator engine!"
+  ACTION=$(zenity --error --text "Returned empty result from translator engine!" --extra-button="$BUTTON_WEB")
+
+  if [[ $ACTION = "$BUTTON_WEB" ]]; then
+    xdg-open $TRANS_URL
+  fi
   exit
 fi
 
