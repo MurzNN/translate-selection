@@ -12,6 +12,8 @@ BUTTON_CLOSE='Close'
 BUTTON_SPEAK='Speak'
 BUTTON_WEB='Web'
 
+WINDOW_WIDTH=600
+
 CUT_LEN='24'
 
 checkCommand() {
@@ -137,7 +139,7 @@ fi
 escape "$TRANSLATION"
 TRANSLATION_ESCAPED=$ESCAPED
 
-ACTION=$(zenity --info --text "$TRANSLATION_ESCAPED" --title "$TITLE_PREFIX$TEXT_TITLE" --ok-label="$BUTTON_CLOSE" --extra-button="$BUTTON_SPEAK" --extra-button="$BUTTON_WEB")
+ACTION=$(zenity --info --text "$TRANSLATION_ESCAPED" --title "$TITLE_PREFIX$TEXT_TITLE" --width=$WINDOW_WIDTH --ok-label="$BUTTON_CLOSE" --extra-button="$BUTTON_SPEAK" --extra-button="$BUTTON_WEB")
 
 if [[ $ACTION = "$BUTTON_SPEAK" ]]; then
   echo "$TEXT" | $TRANS_SPEAK
