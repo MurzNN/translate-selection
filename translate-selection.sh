@@ -3,10 +3,20 @@
 #ENGINE=yandex
 ENGINE=google
 
-checkCommand()
-{
+NOTIFY_CMD='notify-send -t 1000 -u low'
+NOTIFY_TEXT='Loading translation for: '
+EMPTY_TEXT='Nothing is selected!'
+TITLE_PREFIX='Translation: '
+
+BUTTON_CLOSE='Close'
+BUTTON_SPEAK='Speak'
+BUTTON_WEB='Web'
+
+CUT_LEN='24'
+
+checkCommand() {
   if ! command -v $1 > /dev/null; then
-    kdialog --msgbox "Не установлен $1!  sudo apt install xsel libnotify-bin kdialog trans"
+    zenity --info --text "Package '$1' is not installed! sudo apt install xsel libnotify-bin zenity trans"
     exit 1
   fi
 }
@@ -14,19 +24,80 @@ checkCommand()
 checkCommand trans
 checkCommand xsel
 checkCommand notify-send
-checkCommand kdialog
+checkCommand zenity
+#checkCommand kdialog
+#checkCommand yad
 
-TEXT=$(xsel -o)
+urlencode() {
+  local LANG=C
+  local encoded=""
+  local o
+  for ((i=0;i<${#1};i++)); do
+    if [[ ${1:$i:1} =~ ^[a-zA-Z0-9\.\~\_\-]$ ]]; then
+      printf -v o "${1:$i:1}"
+    else
+      printf -v o '%%%02X' "'${1:$i:1}"
+    fi
+  encoded+="${o}"
+  done
+  URLENCODED=$encoded
+}
+
+escape() {
+  ESCAPED=$(echo "$1" | sed 's/"/\\"/g')
+}
+
+CLIPBOARD_TYPE='o'
+
+# Parsing paramters
+
+while (( "$#" )); do
+  case "$1" in
+    --speak)
+      FLAG_SPEAK=1
+      shift
+      ;;
+    -S|--source)
+      if [ -n "$2" ] && [ ${2:0:1} != "-" ]; then
+        CLIPBOARD_TYPE=$2
+        shift 2
+      else
+        CLIPBOARD_TYPE='o'
+      fi
+      ;;
+    -*|--*=) # unsupported flags
+      echo "Error: Unsupported flag $1" >&2
+      exit 1
+      ;;
+    *) # preserve positional arguments
+      PARAMS="$PARAMS $1"
+      shift
+      ;;
+  esac
+done
+
+# Getting the text to translate
+
+TEXT=$(xsel -$CLIPBOARD_TYPE)
+if test -z "$TEXT"; then
+  TEXT=$(xsel -b)
+fi
+
 
 if test -z "$TEXT"; then
-#  echo "Ничего не выделено!"
-  kdialog --msgbox "Ничего не выделено! Выделите текст."
+  kdialog --msgbox "$EMPTY_TEXT"
   exit
 fi
 
-TEXT_TITLE=$(echo $TEXT | cut -c -80)
+#TEXT=$TEXT
+escape "$TEXT"
+TEXT_ESCAPED=$ESCAPED
 
-notify-send "Загружается перевод текста $TEXT_CUT" -t 1000 -u low
+TEXT_TITLE=$(echo $TEXT | grep -P -o "^.{1,$CUT_LEN}")
+escape "$TEXT_TITLE"
+TEXT_TITLE_ESCAPED=$ESCAPED
+
+$NOTIFY_CMD "$NOTIFY_TEXT$TEXT_TITLE"
 
 EN=$(echo $TEXT | sed -e 's/[а-яА-Я]//g')
 RU=$(echo $TEXT | sed -e 's/[a-zA-Z]//g')
@@ -47,31 +118,25 @@ else
   SRC_LANG=en
 fi
 
+TRANS_TRANSLATE="trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG -e $ENGINE $PARAMS"
+TRANS_SPEAK="trans -speak"
+urlencode "$TEXT"
+TRANS_URL="https://translate.google.com/?sl=$SRC_LANGu&tl=$TRANS_LANG&text=$URLENCODED&op=translate"
 
-# notify-send -u critical "$(echo $TEXT | trans -no-ansi -l ru -s ru -t en -b)"
-#TRANSLATION=$(echo $TEXT | trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG $PARAMS)
+TRANSLATION=$(echo "$TEXT" | $TRANS_TRANSLATE)
 
-#echo "trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG -e $ENGINE $PARAMS \'$TEXT\'"
-#exit
-#TRANSLATION=$(trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG -e $ENGINE $PARAMS \'$TEXT\')
-TRANSLATION=$(echo $TEXT | trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG -e $ENGINE $PARAMS)
-#echo $TRANSLATION
-#exit
+if test -z "$TRANSLATION"; then
+  zenity --error --text "Returned empty result from translator engine!"
+  exit
+fi
 
-kdialog --msgbox "$TRANSLATION" --title "Перевод $TEXT_TITLE"
+escape "$TRANSLATION"
+TRANSLATION_ESCAPED=$ESCAPED
 
-#kdialog --msgbox "$TRANSLATION" --title "Перевод $TEXT_CUT"
-#<a href='https://translate.google.com/#view=home&op=translate&sl=ru&tl=en&text=%D0%BD%D0%BE%D0%BC%D0%B5%D0%BD%D0%BA%D0%BB%D0%B0%D1%82%D1%83%D1%80%D0%B0'>На сайте</a>
-# kdialog --msgbox "$(trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG $PARAMS \"$TEXT\")"
-# echo "echo '$TEXT' | ~/bin/trans -no-ansi -l ru -s $SRC_LANG -t $TRANS_LANG $PARAMS"
+ACTION=$(zenity --info --text "$TRANSLATION_ESCAPED" --title "$TITLE_PREFIX$TEXT_TITLE" --ok-label="$BUTTON_CLOSE" --extra-button="$BUTTON_SPEAK" --extra-button="$BUTTON_WEB")
 
-# echo $TRANSLATION
-
-# notify-send -u critical "$(echo $TRANSLATION)"
-# notify-send -u critical "$(echo $TRANSLATION)"
-# kdialog --passivepopup "$(echo $TRANSLATION)" 10
-
-
-# kdialog --msgbox "$(echo $TRANSLATION)" 10
-# exit
-# notify-send -u critical "$($TEXT | trans -no-ansi -l ru)"
+if [[ $ACTION = "$BUTTON_SPEAK" ]]; then
+  echo "$TEXT" | $TRANS_SPEAK
+elif [[ $ACTION = "$BUTTON_WEB" ]]; then
+  xdg-open $TRANS_URL
+fi
