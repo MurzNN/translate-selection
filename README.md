@@ -3,6 +3,8 @@ Simple Linux bash script for quickly translate selected text in popup window.
 
 _I've discovered a more modern and powerful alternative to my bash-based script - [Crow Translate](https://github.com/crow-translate/crow-translate) application, that do the job much better! So consider switching to it from my bash-scripted attempt._
 
+_Other alternative can be KDE Plasma Widget [Translator](https://store.kde.org/p/1395666/).
+
 ## Description in Russian
 
 Простенький скрипт, который переводит выделенный мышкой текст на другой язык. Пока приоритет сделан на перевод с русского язык на английский и обратно, в дальнейшем возможно добавлю и другие языки. Пулл рекьюесты приветствуются ;)
