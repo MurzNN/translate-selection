@@ -1,5 +1,7 @@
 # translate-selection
-Simple Linux bash script for quickly translate selected text in popup window
+Simple Linux bash script for quickly translate selected text in popup window.
+
+_I've discovered a more modern and powerful alternative to my bash-based script - [Crow Translate](https://github.com/crow-translate/crow-translate) application, that do the job much better! So consider switching to it from my bash-scripted attempt._
 
 ## Description in Russian
 
