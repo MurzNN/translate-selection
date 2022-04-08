@@ -3,7 +3,7 @@ Simple Linux bash script for quickly translate selected text in popup window.
 
 _I've discovered a more modern and powerful alternative to my bash-based script - [Crow Translate](https://github.com/crow-translate/crow-translate) application, that do the job much better! So consider switching to it from my bash-scripted attempt._
 
-_Other alternative can be KDE Plasma Widget [Translator](https://store.kde.org/p/1395666/).
+_Other alternative can be KDE Plasma Widget [Translator](https://store.kde.org/p/1395666/)._
 
 ## Description in Russian
 
